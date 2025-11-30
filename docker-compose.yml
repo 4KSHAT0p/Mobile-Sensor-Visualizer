@@ -1,0 +1,115 @@
+services:
+  ###########################
+  #     ZOOKEEPER
+  ###########################
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+    networks:
+      - bigdata
+
+  ###########################
+  #     KAFKA BROKER
+  ###########################
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
+
+      # Proper listener config
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:9092,EXTERNAL://0.0.0.0:29092
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:9092,EXTERNAL://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+      # Auto-create your topic
+      # KAFKA_CREATE_TOPICS: "sensors:1:1"
+    ports:
+      - "9092:29092"
+    networks:
+      - bigdata
+    healthcheck:
+      test: ["CMD", "bash", "-c", "echo > /dev/tcp/localhost/9092"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  ###########################
+  #   KAFKA UI
+  ###########################
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    depends_on:
+      - kafka
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+    networks:
+      - bigdata
+
+  ###########################
+  #   MQTT → Kafka PRODUCER
+  ###########################
+  producer:
+    build: ./reader
+    depends_on:
+      kafka:
+        condition: service_healthy
+    environment:
+      MQTT_BROKER: broker.emqx.io
+      MQTT_PORT: 1883
+      MQTT_TOPIC: android/sensor/#
+
+      KAFKA_BROKER: kafka:9092
+      KAFKA_TOPIC: sensors
+    restart: unless-stopped
+    networks:
+      - bigdata
+
+  ###########################
+  #   TimescaleDB
+  ###########################
+  timescaledb:
+    image: timescale/timescaledb-ha:pg15-latest
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: sensors
+    ports:
+      - "5432:5432"
+    networks:
+      - bigdata
+
+  ###########################
+  #   Kafka → TimescaleDB Writer
+  ###########################
+  ts-writer:
+    build: ./tswriter
+    depends_on:
+      kafka:
+        condition: service_healthy
+      timescaledb:
+        condition: service_started
+    environment:
+      KAFKA_BROKER: kafka:9092
+      KAFKA_TOPIC: sensors
+
+      POSTGRES_HOST: timescaledb
+      POSTGRES_DB: sensors
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    networks:
+      - bigdata
+    restart: unless-stopped
+    
+
+networks:
+  bigdata:
