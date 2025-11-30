@@ -85,6 +85,12 @@ services:
       POSTGRES_DB: sensors
     ports:
       - "5432:5432"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U your_user"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     networks:
       - bigdata
 
@@ -109,7 +115,19 @@ services:
     networks:
       - bigdata
     restart: unless-stopped
-    
+
+  grafana:
+    image: grafana/grafana:latest
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    networks:
+      - bigdata
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+    # volumes:
+    #   grafana_data:
 
 networks:
   bigdata:

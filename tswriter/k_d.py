@@ -2,6 +2,7 @@ import os
 import json
 import psycopg2
 from confluent_kafka import Consumer
+from datetime import datetime, timezone
 
 # -----------------------------------
 # Environment variables from docker-compose
@@ -83,15 +84,24 @@ while True:
         sensor_type = data["type"]
         values = data["values"]
 
-        # Convert ns → seconds → proper timestamp
-        ts_ns = int(data["timestamp"])
-        ts = ts_ns / 1_000_000_000.0  # convert nanoseconds to seconds
+        # # Convert ns → seconds → proper timestamp
+        # ts_ns = int(data["timestamp"])
+        # ts = ts_ns / 1_000_000_000.0  # convert nanoseconds to seconds
 
+        ts = datetime.now(timezone.utc).isoformat()
+
+        # cur.execute(
+        #     """
+        #     INSERT INTO sensor_data (ts, sensor_type, values)
+        #     VALUES (to_timestamp(%s), %s, %s)
+        #     """,
+        #     (ts, sensor_type, json.dumps(values)),
+        # )
         cur.execute(
             """
-            INSERT INTO sensor_data (ts, sensor_type, values)
-            VALUES (to_timestamp(%s), %s, %s)
-            """,
+        INSERT INTO sensor_data (ts, sensor_type, values)
+        VALUES (%s, %s, %s)
+        """,
             (ts, sensor_type, json.dumps(values)),
         )
 
