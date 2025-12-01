@@ -124,3 +124,15 @@ _We can get the names of the containers via_:
 ```
 
 ### 4. Open Grafana and start visualizing
+
+Open Grafana on localhost:3000 and enter `admin` as usename and password. Choose PostgreSQL as a data source and create a connection. 
+```
+Host: timescaledb:5432
+Database: your_db_name
+User: your_pg_user
+Password: your_pg_pass
+```
+
+Now we can start making different real-time visualizations.
+
+
