@@ -123,6 +123,16 @@ _We can get the names of the containers via_:
     docker ps 
 ```
 
+
+We can enter the postgres instance by entering that container and running:
+
+```
+   psql -U postgres -d sensors
+```
+
+and start querying the data manually.
+
+
 ### 5. Open Grafana and start visualizing
 
 Open Grafana on localhost:3000 and enter `admin` as usename and password. Choose PostgreSQL as a data source and create a connection. 
