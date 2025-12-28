@@ -78,7 +78,7 @@ No service runs locally on the host machine; every component is isolated, reprod
 ## How to run
 
 
-### 1️. Open SensorSpot
+### 1. Open SensorSpot
 
 Open the app and set the broker address and port number as `broker.emqx.io` and `1883` and connect to the broker.
 
@@ -123,7 +123,7 @@ _We can get the names of the containers via_:
     docker ps 
 ```
 
-### 4. Open Grafana and start visualizing
+### 5. Open Grafana and start visualizing
 
 Open Grafana on localhost:3000 and enter `admin` as usename and password. Choose PostgreSQL as a data source and create a connection. 
 ```
